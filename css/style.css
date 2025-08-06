@@ -1,61 +1,63 @@
-body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    background-color: #000;
-    color: #fff;
-    overflow: hidden; /* Hide scrollbars */
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    font-family: 'Inter', sans-serif; 
+    background-color: #000; 
+    color: #fff; 
 }
 
-canvas#bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1; /* Place it behind other content */
+canvas { 
+    display: block; 
 }
 
 #info-panel {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 20px;
-    background-color: rgba(0, 0, 0, 0.5);
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
     border-radius: 10px;
     max-width: 300px;
 }
 
 #planet-list {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    padding: 10px;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 10px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-#planet-list button {
-    display: block;
-    margin: 5px;
-    padding: 10px;
-    background-color: #333;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
+#planet-list li {
+    padding: 8px;
     cursor: pointer;
-    width: 100%;
+    border-radius: 5px;
+    /* Corrected the colon to a space */
+    transition: background-color 0.3s;
 }
 
-#planet-list button:hover {
-    background-color: #555;
+#planet-list li:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
-#controls {
+#controls-info {
     position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
     padding: 10px;
-    background-color: rgba(0, 0, 0, 0.5);
     border-radius: 10px;
+    font-size: 14px;
+}
+
+.toggle-button {
+    background-color: #444;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
 }
