@@ -162,9 +162,38 @@ function createPlanets() {
 
 function createCelestialBody(data) {
     const geometry = new THREE.SphereGeometry(data.size, 32, 32);
-    const texture = new THREE.TextureLoader().load(textureBaseUrl + data.texture);
-    const material = new THREE.MeshStandardMaterial({ map: texture });
-    const body = new THREE.Mesh(geometry, material);
+    const textureLoader = new THREE.TextureLoader();
+    let material;
+    let body;
+
+    if (data.name === 'Earth') {
+        material = new THREE.MeshPhongMaterial({
+            map: textureLoader.load(data.texture),
+            normalMap: textureLoader.load('assets/2k_earth_normal_map.tif'),
+            specularMap: textureLoader.load('assets/2k_earth_specular_map.tif'),
+            emissiveMap: textureLoader.load('assets/2k_earth_nightmap.jpg'),
+            emissive: 0xffffff,
+            emissiveIntensity: 1,
+            shininess: 30
+        });
+
+        const cloudsGeometry = new THREE.SphereGeometry(data.size * 1.01, 32, 32);
+        const cloudsMaterial = new THREE.MeshPhongMaterial({
+            map: textureLoader.load('assets/2k_earth_clouds.jpg'),
+            transparent: true,
+            opacity: 0.5
+        });
+        const clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
+        clouds.userData.isClouds = true;
+
+        body = new THREE.Mesh(geometry, material);
+        body.add(clouds);
+
+    } else {
+        const texture = textureLoader.load(textureBaseUrl + data.texture);
+        material = new THREE.MeshStandardMaterial({ map: texture });
+        body = new THREE.Mesh(geometry, material);
+    }
     
     const wireframeGeom = new THREE.WireframeGeometry(geometry);
     const wireframeMat = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3 });
@@ -341,6 +370,15 @@ function animate(time) {
             body.userData.orbit.rotation.y += body.userData.speed * 0.01;
         }
         body.rotation.y += 0.005;
+
+        // Animate clouds
+        if (body.children.length > 0) {
+            body.children.forEach(child => {
+                if (child.userData.isClouds) {
+                    child.rotation.y += 0.001;
+                }
+            });
+        }
     });
 
     comets.forEach(comet => {
