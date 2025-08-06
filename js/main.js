@@ -189,6 +189,21 @@ function createCelestialBody(data) {
         body = new THREE.Mesh(geometry, material);
         body.add(clouds);
 
+    } else if (data.name === 'Venus') {
+        material = new THREE.MeshStandardMaterial({ map: textureLoader.load(data.texture) });
+        body = new THREE.Mesh(geometry, material);
+
+        const atmosphereGeometry = new THREE.SphereGeometry(data.size * 1.01, 32, 32);
+        const atmosphereMaterial = new THREE.MeshPhongMaterial({
+            map: textureLoader.load('assets/2k_venus_atmosphere.jpg'),
+            transparent: true,
+            opacity: 0.5
+        });
+        const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+        atmosphere.userData.isClouds = true; // Re-use the same flag for animation
+
+        body.add(atmosphere);
+
     } else {
         const texture = textureLoader.load(textureBaseUrl + data.texture);
         material = new THREE.MeshStandardMaterial({ map: texture });
