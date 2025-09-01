@@ -109,7 +109,7 @@ class CameraManager {
         const targetLookAt = new THREE.Vector3();
         planet.getWorldPosition(targetLookAt);
 
-        const distance = Math.max(planet.userData.size * 3, 20);
+        const distance = planet.userData.size * 2.5;
         const direction = new THREE.Vector3().subVectors(this.camera.position, targetLookAt).normalize();
         const endPosition = new THREE.Vector3().addVectors(targetLookAt, direction.multiplyScalar(distance));
 
@@ -153,7 +153,18 @@ class CameraManager {
         } else if (this.focusedPlanet && !this.isTransitioning) {
             const targetPosition = new THREE.Vector3();
             this.focusedPlanet.getWorldPosition(targetPosition);
+
+            // Before OrbitControls updates the camera based on user input,
+            // we calculate the camera's current offset from the target.
+            const offset = new THREE.Vector3().subVectors(this.camera.position, this.orbitControls.target);
+
+            // Then, we update the target to the planet's new position.
             this.orbitControls.target.copy(targetPosition);
+
+            // And finally, we re-apply the offset to the new target position.
+            // This effectively moves the camera with the planet.
+            this.camera.position.copy(this.orbitControls.target).add(offset);
+
             this.orbitControls.update();
         }
     }
