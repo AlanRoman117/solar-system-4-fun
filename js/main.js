@@ -87,7 +87,7 @@ function init() {
 
     const sunTexture = textureLoader.load('assets/2k_sun.jpg');
     const sunGeometry = new THREE.SphereGeometry(20, 64, 64);
-    const sunMaterial = new THREE.MeshStandardMaterial({ map: sunTexture, emissive: 0xffff00, emissiveIntensity: 1 });
+    const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
     sun = new THREE.Mesh(sunGeometry, sunMaterial);
     sun.userData = { name: 'Sun', isPlanet: true, size: 20 };
     scene.add(sun);
