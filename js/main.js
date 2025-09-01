@@ -1,16 +1,12 @@
 // Import necessary components from Three.js
-import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/PointerLockControls.js';
 import { Lensflare, LensflareElement } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/objects/Lensflare.js';
+import { CameraManager } from './CameraManager.js';
 
 // NOTE: We no longer import Tween.js here. It's loaded via the <script> tag in index.html,
 // which makes the `TWEEN` object globally available.
 
 // Scene, Camera, and Renderer
-let scene, camera, renderer;
-let controls;
-let freeRoam = true;
-let focusedPlanet = null;
-let isTransitioning = false;
+let scene, renderer, cameraManager;
 
 // Celestial Bodies
 const celestialBodies = [];
@@ -55,18 +51,13 @@ animate();
 
 function init() {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
-    camera.position.z = 200;
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    controls = new PointerLockControls(camera, renderer.domElement);
-    scene.add(controls.getObject());
-
-    document.addEventListener('click', () => { if (freeRoam) controls.lock(); });
+    cameraManager = new CameraManager(scene, renderer);
     
     const onKey = (event, isDown) => {
         switch (event.code) {
@@ -290,13 +281,7 @@ function setupUI() {
     celestialBodies.filter(b => b.userData.name !== 'Sun' && b.userData.isPlanet).forEach(body => addBodyToList(body, planetList));
 
     document.getElementById('toggle-nav').addEventListener('click', () => {
-        if (isTransitioning) return;
-
-        TWEEN.removeAll();
-        isTransitioning = false;
-        freeRoam = true;
-        focusedPlanet = null;
-        document.getElementById('controls-info').style.display = 'block';
+        cameraManager.switchToFreeRoam();
     });
 }
 
@@ -304,73 +289,13 @@ function addBodyToList(body, listElement) {
     const li = document.createElement('li');
     li.textContent = body.userData.name;
     li.onclick = () => {
-        if (isTransitioning) return;
-        
-        const newTarget = body;
-        if (newTarget === focusedPlanet && !freeRoam) return;
-
-        TWEEN.removeAll();
-        isTransitioning = true;
-        
-        const oldTarget = freeRoam ? null : focusedPlanet; 
-        
-        focusedPlanet = newTarget; 
-        freeRoam = false;
-        controls.unlock();
-        document.getElementById('controls-info').style.display = 'none';
-        
-        cinematicArcTransition(oldTarget, newTarget);
+        cameraManager.setFocus(body);
     };
     listElement.appendChild(li);
 }
 
-function cinematicArcTransition(startBody, endBody) {
-    let startPosition;
-    let startLookAt = new THREE.Vector3();
-
-    if (startBody) {
-        startBody.getWorldPosition(startLookAt);
-        const radius = startBody.userData.size;
-        const offsetDirection = camera.position.clone().sub(startLookAt).normalize();
-        startPosition = startLookAt.clone().add(offsetDirection.multiplyScalar(radius * 1.5));
-    } else {
-        startPosition = camera.position.clone();
-        endBody.getWorldPosition(startLookAt);
-    }
-
-    const initialEndLookAt = new THREE.Vector3();
-    endBody.getWorldPosition(initialEndLookAt);
-    const endRadius = endBody.userData.size;
-    const arrivalVector = startPosition.clone().sub(initialEndLookAt).normalize();
-    const initialEndPosition = initialEndLookAt.clone().add(arrivalVector.multiplyScalar(endRadius * 1.5));
-
-    const controlPoint = startPosition.clone().lerp(initialEndPosition, 0.5);
-    controlPoint.y += startPosition.distanceTo(initialEndPosition) * 0.35;
-    const curve = new THREE.QuadraticBezierCurve3(startPosition, controlPoint, initialEndPosition);
-
-    const animationProgress = { t: 0 };
-    new TWEEN.Tween(animationProgress)
-        .to({ t: 1 }, 2500)
-        .easing(TWEEN.Easing.Cubic.InOut)
-        .onUpdate(() => {
-            const pointOnCurve = curve.getPoint(animationProgress.t);
-            const currentEndLookAt = new THREE.Vector3();
-            endBody.getWorldPosition(currentEndLookAt);
-            const positionDelta = currentEndLookAt.clone().sub(initialEndLookAt);
-            camera.position.copy(pointOnCurve).add(positionDelta);
-            
-            const interpolatedLookAt = new THREE.Vector3().lerpVectors(startLookAt, currentEndLookAt, animationProgress.t);
-            camera.lookAt(interpolatedLookAt);
-        })
-        .onComplete(() => {
-            isTransitioning = false;
-        })
-        .start();
-}
-
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+    cameraManager.onWindowResize();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
@@ -419,8 +344,8 @@ function animate(time) {
         data.tail.geometry.attributes.position.needsUpdate = true;
     });
 
-    if (freeRoam) {
-        if (controls.isLocked) {
+    if (cameraManager.isFreeRoam) {
+        if (cameraManager.pointerLockControls.isLocked) {
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
             direction.z = Number(moveForward) - Number(moveBackward);
@@ -431,26 +356,17 @@ function animate(time) {
             if (moveLeft || moveRight) velocity.x -= direction.x * 40.0 * delta;
 
             const cameraDirection = new THREE.Vector3();
-            camera.getWorldDirection(cameraDirection);
-            const raycaster = new THREE.Raycaster(camera.position, cameraDirection);
+            cameraManager.camera.getWorldDirection(cameraDirection);
+            const raycaster = new THREE.Raycaster(cameraManager.camera.position, cameraDirection);
             const intersections = raycaster.intersectObjects(celestialBodies, true);
 
             if (!intersections.length || intersections[0].distance > 5) {
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
+                cameraManager.pointerLockControls.moveRight(-velocity.x * delta);
+                cameraManager.pointerLockControls.moveForward(-velocity.z * delta);
             }
         }
-    } else if (focusedPlanet && !isTransitioning) {
-        const lookAtTarget = new THREE.Vector3();
-        focusedPlanet.getWorldPosition(lookAtTarget);
-
-        const radius = focusedPlanet.userData.size;
-        const offsetDirection = camera.position.clone().sub(lookAtTarget).normalize();
-        const finalPosition = lookAtTarget.clone().add(offsetDirection.multiplyScalar(radius * 1.5));
-
-        camera.position.lerp(finalPosition, 0.1);
-        camera.lookAt(lookAtTarget);
     }
 
-    renderer.render(scene, camera);
+    cameraManager.update();
+    renderer.render(scene, cameraManager.camera);
 }
