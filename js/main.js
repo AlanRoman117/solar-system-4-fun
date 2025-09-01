@@ -148,7 +148,7 @@ function createSunParticles(texture) {
 
     const particlesMaterial = new THREE.PointsMaterial({
         map: texture,
-        size: 2,
+        size: 5, // Increased particle size for better visibility
         color: 0xffddaa,
         transparent: true,
         blending: THREE.AdditiveBlending,
