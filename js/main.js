@@ -10,7 +10,7 @@ let scene, renderer, cameraManager;
 
 // Celestial Bodies
 const celestialBodies = [];
-let sun;
+let sun, sunParticles;
 let comets = [];
 
 // Movement
@@ -56,6 +56,9 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.5;
 
     cameraManager = new CameraManager(scene, renderer);
     
@@ -74,16 +77,20 @@ function init() {
     scene.add(ambientLight);
 
     const textureLoader = new THREE.TextureLoader();
-    
-    const backgroundTexture = textureLoader.load('assets/2k_stars_milky_way.jpg',
-        () => {},
+
+    // Load the high-resolution equirectangular texture
+    const backgroundTexture = textureLoader.load('assets/8k_stars_milky_way.jpg',
+        (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            scene.background = texture;
+            console.log("Skybox texture loaded and applied.");
+        },
         undefined,
         () => {
             console.log("Skybox texture failed to load. Using black background.");
             scene.background = new THREE.Color(0x000000);
         }
     );
-    scene.background = backgroundTexture;
 
     const sunTexture = textureLoader.load('assets/2k_sun.jpg');
     const sunGeometry = new THREE.SphereGeometry(20, 64, 64);
@@ -104,11 +111,53 @@ function init() {
     lensflare.addElement(new LensflareElement(textureFlare3, 70, 0.7));
     pointLight.add(lensflare);
 
+    createSunParticles(textureFlare0);
     createPlanets();
     createAsteroidBelt();
     createComets();
     setupUI();
     window.addEventListener('resize', onWindowResize, false);
+}
+
+function createSunParticles(texture) {
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCnt = 2000;
+    const posArray = new Float32Array(particlesCnt * 3);
+    const particleVelocities = []; // Store velocities
+
+    for (let i = 0; i < particlesCnt * 3; i++) {
+        const theta = Math.random() * 2 * Math.PI;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const r = sun.userData.size + (Math.random() * 5); // Start on or just above the surface
+
+        posArray[i] = r * Math.sin(phi) * Math.cos(theta);
+        posArray[i + 1] = r * Math.sin(phi) * Math.sin(theta);
+        posArray[i + 2] = r * Math.cos(phi);
+
+        // Store a random velocity vector for each particle
+        const velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.1
+        );
+        particleVelocities.push(velocity);
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    particlesGeometry.userData.velocities = particleVelocities; // Attach velocities to geometry
+
+    const particlesMaterial = new THREE.PointsMaterial({
+        map: texture,
+        size: 5, // Increased particle size for better visibility
+        color: 0xffddaa,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false, // Important for blending
+        opacity: 0.8
+    });
+
+    sunParticles = new THREE.Points(particlesGeometry, particlesMaterial);
+    sun.add(sunParticles); // Add particles as a child of the sun
 }
 
 function createPlanets() {
@@ -302,6 +351,36 @@ function onWindowResize() {
 function animate(time) {
     requestAnimationFrame(animate);
     TWEEN.update(time);
+
+    // Animate Sun Particles
+    if (sunParticles) {
+        const positions = sunParticles.geometry.attributes.position.array;
+        const velocities = sunParticles.geometry.userData.velocities;
+        const sunRadius = sun.userData.size;
+
+        for (let i = 0; i < positions.length; i += 3) {
+            const p = new THREE.Vector3(positions[i], positions[i + 1], positions[i + 2]);
+            const v = velocities[i / 3];
+            p.add(v);
+
+            // If particle is too far, reset it to the surface
+            if (p.length() > sunRadius + 20) {
+                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos((Math.random() * 2) - 1);
+                p.set(
+                    sunRadius * Math.sin(phi) * Math.cos(theta),
+                    sunRadius * Math.sin(phi) * Math.sin(theta),
+                    sunRadius * Math.cos(phi)
+                );
+            }
+
+            positions[i] = p.x;
+            positions[i + 1] = p.y;
+            positions[i + 2] = p.z;
+        }
+        sunParticles.geometry.attributes.position.needsUpdate = true;
+        sunParticles.rotation.y += 0.0005; // Gently rotate the whole particle system
+    }
 
     const delta = 0.05;
 
