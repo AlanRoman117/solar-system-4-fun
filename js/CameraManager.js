@@ -173,10 +173,6 @@ class CameraManager {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
     }
-
-    setCameraPosition(x, y, z) {
-        this.camera.position.set(x, y, z);
-    }
 }
 
 export { CameraManager };

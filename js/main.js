@@ -70,8 +70,6 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     cameraManager = new CameraManager(scene, renderer);
-    window.cameraManager = cameraManager;
-    window.celestialBodies = celestialBodies;
     
     const onKey = (event, isDown) => {
         switch (event.code) {
@@ -208,7 +206,6 @@ function createPlanets() {
                 blending: THREE.AdditiveBlending
             });
             const ring = new THREE.Points(ringGeometry, ringMaterial);
-            ring.rotation.x = Math.PI / 2;
             planet.add(ring);
             ring.userData.isRing = true;
         }
@@ -405,7 +402,7 @@ function animate(time) {
                     child.rotation.y += 0.001;
                 }
                 if (child.userData.isRing) {
-                    child.rotation.z += 0.002;
+                    child.rotation.y += 0.002;
                 }
             });
         }
