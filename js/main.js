@@ -5,6 +5,7 @@ import { EffectComposer } from 'https://cdn.skypack.dev/three@0.128.0/examples/j
 import { RenderPass } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { SMAAPass } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/SMAAPass.js';
+import { BufferGeometryUtils } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/utils/BufferGeometryUtils.js';
 
 
 // NOTE: We no longer import Tween.js here. It's loaded via the <script> tag in index.html,
@@ -69,6 +70,8 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     cameraManager = new CameraManager(scene, renderer);
+    window.cameraManager = cameraManager;
+    window.celestialBodies = celestialBodies;
     
     const onKey = (event, isDown) => {
         switch (event.code) {
@@ -144,6 +147,33 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 }
 
+function createRingGeometry(innerRadius, outerRadius, thickness, thetaSegments) {
+    const topGeometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, 1);
+    const bottomGeometry = topGeometry.clone();
+
+    topGeometry.translate(0, 0, thickness / 2);
+    bottomGeometry.rotateX(Math.PI);
+    bottomGeometry.translate(0, 0, -thickness / 2);
+
+    const innerWallGeometry = new THREE.CylinderGeometry(innerRadius, innerRadius, thickness, thetaSegments, 1, true);
+    const outerWallGeometry = new THREE.CylinderGeometry(outerRadius, outerRadius, thickness, thetaSegments, 1, true);
+
+    innerWallGeometry.rotateX(Math.PI / 2);
+    outerWallGeometry.rotateX(Math.PI / 2);
+
+    // Invert the faces and normals of the inner wall
+    const innerIndices = innerWallGeometry.index.array;
+    for (let i = 0; i < innerIndices.length; i += 3) {
+        const a = innerIndices[i];
+        innerIndices[i] = innerIndices[i + 2];
+        innerIndices[i + 2] = a;
+    }
+    innerWallGeometry.computeVertexNormals();
+
+    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries([topGeometry, bottomGeometry, innerWallGeometry, outerWallGeometry]);
+    return mergedGeometry;
+}
+
 function createPlanets() {
     const textureLoader = new THREE.TextureLoader();
     planetData.forEach(data => {
@@ -163,7 +193,7 @@ function createPlanets() {
 
         if (data.hasRing) {
             const ringTexture = textureLoader.load('assets/2k_saturn_ring_alpha.png');
-            const ringGeometry = new THREE.TorusGeometry(data.size * 1.5, 0.1, 16, 100);
+            const ringGeometry = createRingGeometry(data.size * 1.2, data.size * 2, 0.1, 64);
             const ringMaterial = new THREE.MeshStandardMaterial({
                 map: ringTexture,
                 side: THREE.DoubleSide,
