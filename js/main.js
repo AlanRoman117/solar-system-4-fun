@@ -45,10 +45,10 @@ const planetData = [
         { name: 'Europa', texture: 'https://www.solarsystemscope.com/textures/download/europa.jpg', size: 0.25, distance: 20, speed: 0.08 },
         { name: 'Ganymede', texture: 'https://www.solarsystemscope.com/textures/download/ganymede.jpg', size: 0.4, distance: 25, speed: 0.06 },
         { name: 'Callisto', texture: 'https://www.solarsystemscope.com/textures/download/callisto.jpg', size: 0.38, distance: 30, speed: 0.05 }
-    ]},
-    { name: 'Saturn', texture: 'assets/2k_saturn.jpg', size: 9.45, distance: 1427, speed: 0.009, moons: [], hasRing: true },
-    { name: 'Uranus', texture: 'assets/2k_uranus.jpg', size: 4, distance: 2871, speed: 0.006, moons: [] },
-    { name: 'Neptune', texture: 'assets/2k_neptune.jpg', size: 3.88, distance: 4497, speed: 0.005, moons: [] },
+    ], hasRing: true, ringColor: 0xffa500, ringOpacity: 0.2},
+    { name: 'Saturn', texture: 'assets/2k_saturn.jpg', size: 9.45, distance: 1427, speed: 0.009, moons: [], hasRing: true, ringColor: 0xffffff, ringOpacity: 0.8 },
+    { name: 'Uranus', texture: 'assets/2k_uranus.jpg', size: 4, distance: 2871, speed: 0.006, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.4 },
+    { name: 'Neptune', texture: 'assets/2k_neptune.jpg', size: 3.88, distance: 4497, speed: 0.005, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.3 },
     { name: 'Pluto', texture: 'https://www.solarsystemscope.com/textures/download/pluto.jpg', size: 0.18, distance: 5913, speed: 0.004, moons: [] }
 ];
 
@@ -163,12 +163,13 @@ function createPlanets() {
 
         if (data.hasRing) {
             const ringTexture = textureLoader.load('assets/2k_saturn_ring_alpha.png');
-            const ringGeometry = new THREE.RingGeometry(data.size * 1.2, data.size * 2, 64);
+            const ringGeometry = new THREE.TorusGeometry(data.size * 1.5, 0.1, 16, 100);
             const ringMaterial = new THREE.MeshStandardMaterial({
                 map: ringTexture,
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: 0.8,
+                opacity: data.ringOpacity,
+                color: data.ringColor,
                 metalness: 0.1,
                 roughness: 0.8
             });
@@ -177,6 +178,7 @@ function createPlanets() {
             ring.castShadow = true;
             ring.receiveShadow = true;
             planet.add(ring);
+            ring.userData.isRing = true;
         }
 
         if (data.moons) {
@@ -364,11 +366,14 @@ function animate(time) {
         }
         body.rotation.y += 0.005;
 
-        // Animate clouds
+        // Animate clouds and rings
         if (body.children.length > 0) {
             body.children.forEach(child => {
                 if (child.userData.isClouds) {
                     child.rotation.y += 0.001;
+                }
+                if (child.userData.isRing) {
+                    child.rotation.z += 0.002;
                 }
             });
         }
