@@ -149,6 +149,20 @@ function init() {
 
 function createRingGeometry(innerRadius, outerRadius, thickness, thetaSegments) {
     const topGeometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, 1);
+    const uvs = topGeometry.attributes.uv.array;
+    const positions = topGeometry.attributes.position.array;
+    for (let i = 0; i < positions.length / 3; i++) {
+        const x = positions[i * 3];
+        const y = positions[i * 3 + 1];
+        const radius = Math.sqrt(x * x + y * y);
+        const angle = Math.atan2(y, x);
+        const u = (angle + Math.PI) / (2 * Math.PI);
+        const v = (radius - innerRadius) / (outerRadius - innerRadius);
+        uvs[i * 2] = u;
+        uvs[i * 2 + 1] = v;
+    }
+    topGeometry.attributes.uv.needsUpdate = true;
+
     const bottomGeometry = topGeometry.clone();
 
     topGeometry.translate(0, 0, thickness / 2);
