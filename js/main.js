@@ -1,12 +1,17 @@
 // Import necessary components from Three.js
 import { Lensflare, LensflareElement } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/objects/Lensflare.js';
 import { CameraManager } from './CameraManager.js';
+import { EffectComposer } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { SMAAPass } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/SMAAPass.js';
+
 
 // NOTE: We no longer import Tween.js here. It's loaded via the <script> tag in index.html,
 // which makes the `TWEEN` object globally available.
 
 // Scene, Camera, and Renderer
-let scene, renderer, cameraManager;
+let scene, renderer, cameraManager, composer;
 
 // Celestial Bodies
 const celestialBodies = [];
@@ -60,6 +65,8 @@ function init() {
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.5;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     cameraManager = new CameraManager(scene, renderer);
     
@@ -74,8 +81,8 @@ function init() {
     document.addEventListener('keydown', (e) => onKey(e, true));
     document.addEventListener('keyup', (e) => onKey(e, false));
     
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-    scene.add(ambientLight);
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x222222, 1.0);
+    scene.add(hemisphereLight);
 
     const textureLoader = new THREE.TextureLoader();
 
@@ -95,13 +102,22 @@ function init() {
 
     const sunTexture = textureLoader.load('assets/2k_sun.jpg');
     const sunGeometry = new THREE.SphereGeometry(20, 64, 64);
-    const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
+    const sunMaterial = new THREE.MeshStandardMaterial({
+        map: sunTexture,
+        emissiveMap: sunTexture,
+        emissive: 0xffffee,
+        emissiveIntensity: 1.5
+    });
     sun = new THREE.Mesh(sunGeometry, sunMaterial);
     sun.userData = { name: 'Sun', isPlanet: true, size: 20 };
     scene.add(sun);
     celestialBodies.push(sun);
 
-    const pointLight = new THREE.PointLight(0xffffff, 1.5, 20000);
+    const pointLight = new THREE.PointLight(0xffffff, 2, 0, 2); // Use physically correct decay
+    pointLight.castShadow = true;
+    pointLight.shadow.mapSize.width = 4096;
+    pointLight.shadow.mapSize.height = 4096;
+    pointLight.shadow.bias = -0.001;
     sun.add(pointLight);
 
     const textureFlare0 = textureLoader.load('https://cdn.rawgit.com/jeromeetienne/threex.planets/master/images/lensflare/lensflare0.png');
@@ -111,6 +127,15 @@ function init() {
     lensflare.addElement(new LensflareElement(textureFlare3, 60, 0.6));
     lensflare.addElement(new LensflareElement(textureFlare3, 70, 0.7));
     pointLight.add(lensflare);
+
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, cameraManager.camera));
+
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.5, 0.1);
+    composer.addPass(bloomPass);
+
+    const smaaPass = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+    composer.addPass(smaaPass);
 
     createPlanets();
     createAsteroidBelt();
@@ -139,9 +164,18 @@ function createPlanets() {
         if (data.hasRing) {
             const ringTexture = textureLoader.load('assets/2k_saturn_ring_alpha.png');
             const ringGeometry = new THREE.RingGeometry(data.size * 1.2, data.size * 2, 64);
-            const ringMaterial = new THREE.MeshBasicMaterial({ map: ringTexture, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+            const ringMaterial = new THREE.MeshStandardMaterial({
+                map: ringTexture,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8,
+                metalness: 0.1,
+                roughness: 0.8
+            });
             const ring = new THREE.Mesh(ringGeometry, ringMaterial);
             ring.rotation.x = Math.PI / 2;
+            ring.castShadow = true;
+            ring.receiveShadow = true;
             planet.add(ring);
         }
 
@@ -166,24 +200,27 @@ function createCelestialBody(data) {
     let body;
 
     if (data.name === 'Earth') {
-        material = new THREE.MeshPhongMaterial({
+        material = new THREE.MeshStandardMaterial({
             map: textureLoader.load(data.texture),
             normalMap: textureLoader.load('assets/2k_earth_normal_map.tif'),
-            specularMap: textureLoader.load('assets/2k_earth_specular_map.tif'),
+            roughnessMap: textureLoader.load('assets/2k_earth_specular_map.tif'),
             emissiveMap: textureLoader.load('assets/2k_earth_nightmap.jpg'),
             emissive: 0xffffff,
             emissiveIntensity: 1,
-            shininess: 30
+            metalness: 0.1
         });
 
         const cloudsGeometry = new THREE.SphereGeometry(data.size * 1.01, 32, 32);
-        const cloudsMaterial = new THREE.MeshPhongMaterial({
+        const cloudsMaterial = new THREE.MeshStandardMaterial({
             map: textureLoader.load('assets/2k_earth_clouds.jpg'),
             transparent: true,
-            opacity: 0.5
+            opacity: 0.5,
+            metalness: 0.1,
+            roughness: 0.8
         });
         const clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
         clouds.userData.isClouds = true;
+        clouds.receiveShadow = true;
 
         body = new THREE.Mesh(geometry, material);
         body.add(clouds);
@@ -193,13 +230,16 @@ function createCelestialBody(data) {
         body = new THREE.Mesh(geometry, material);
 
         const atmosphereGeometry = new THREE.SphereGeometry(data.size * 1.01, 32, 32);
-        const atmosphereMaterial = new THREE.MeshPhongMaterial({
+        const atmosphereMaterial = new THREE.MeshStandardMaterial({
             map: textureLoader.load('assets/2k_venus_atmosphere.jpg'),
             transparent: true,
-            opacity: 0.5
+            opacity: 0.5,
+            metalness: 0.1,
+            roughness: 0.8
         });
         const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
         atmosphere.userData.isClouds = true; // Re-use the same flag for animation
+        atmosphere.receiveShadow = true;
 
         body.add(atmosphere);
 
@@ -212,6 +252,10 @@ function createCelestialBody(data) {
     const wireframeGeom = new THREE.WireframeGeometry(geometry);
     const wireframeMat = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3 });
     body.add(new THREE.LineSegments(wireframeGeom, wireframeMat));
+
+    body.castShadow = true;
+    body.receiveShadow = true;
+
     return body;
 }
 
@@ -305,6 +349,7 @@ function addBodyToList(body, listElement) {
 function onWindowResize() {
     cameraManager.onWindowResize();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function animate(time) {
@@ -380,5 +425,5 @@ function animate(time) {
     if (asteroidBelt) {
         asteroidBelt.rotation.y += 0.001; // Adjust this value for speed
     }
-    renderer.render(scene, cameraManager.camera);
+    composer.render();
 }
