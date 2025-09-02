@@ -12,6 +12,7 @@ let scene, renderer, cameraManager;
 const celestialBodies = [];
 let sun;
 let comets = [];
+let asteroidBelt;
 
 // Movement
 const velocity = new THREE.Vector3();
@@ -215,7 +216,7 @@ function createCelestialBody(data) {
 }
 
 function createAsteroidBelt() {
-    const asteroids = new THREE.Group();
+    asteroidBelt = new THREE.Group();
     const asteroidCount = 5000;
     const beltInnerRadius = 300;
     const beltOuterRadius = 500;
@@ -237,9 +238,9 @@ function createAsteroidBelt() {
         asteroid.position.set(x, y, z);
         asteroid.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
         
-        asteroids.add(asteroid);
+        asteroidBelt.add(asteroid);
     }
-    scene.add(asteroids);
+    scene.add(asteroidBelt);
 }
 
 function createComets() {
@@ -375,5 +376,9 @@ function animate(time) {
     }
 
     cameraManager.update();
+    // Spin the asteroid belt
+    if (asteroidBelt) {
+        asteroidBelt.rotation.y += 0.001; // Adjust this value for speed
+    }
     renderer.render(scene, cameraManager.camera);
 }
