@@ -147,45 +147,36 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 }
 
-function createRingGeometry(innerRadius, outerRadius, thickness, thetaSegments) {
-    const topGeometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, 1);
-    const uvs = topGeometry.attributes.uv.array;
-    const positions = topGeometry.attributes.position.array;
-    for (let i = 0; i < positions.length / 3; i++) {
-        const x = positions[i * 3];
-        const y = positions[i * 3 + 1];
-        const radius = Math.sqrt(x * x + y * y);
-        const angle = Math.atan2(y, x);
-        const u = (angle + Math.PI) / (2 * Math.PI);
-        const v = (radius - innerRadius) / (outerRadius - innerRadius);
-        uvs[i * 2] = u;
-        uvs[i * 2 + 1] = v;
+function createParticleTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 16;
+    canvas.height = 16;
+    const context = canvas.getContext('2d');
+    const gradient = context.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.2, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.4, 'rgba(255,255,255,0.8)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    return new THREE.CanvasTexture(canvas);
+}
+
+function createParticleRing(particleCount, innerRadius, outerRadius, thickness) {
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+
+    for (let i = 0; i < particleCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * (outerRadius - innerRadius) + innerRadius;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const y = (Math.random() - 0.5) * thickness;
+        positions.push(x, y, z);
     }
-    topGeometry.attributes.uv.needsUpdate = true;
 
-    const bottomGeometry = topGeometry.clone();
-
-    topGeometry.translate(0, 0, thickness / 2);
-    bottomGeometry.rotateX(Math.PI);
-    bottomGeometry.translate(0, 0, -thickness / 2);
-
-    const innerWallGeometry = new THREE.CylinderGeometry(innerRadius, innerRadius, thickness, thetaSegments, 1, true);
-    const outerWallGeometry = new THREE.CylinderGeometry(outerRadius, outerRadius, thickness, thetaSegments, 1, true);
-
-    innerWallGeometry.rotateX(Math.PI / 2);
-    outerWallGeometry.rotateX(Math.PI / 2);
-
-    // Invert the faces and normals of the inner wall
-    const innerIndices = innerWallGeometry.index.array;
-    for (let i = 0; i < innerIndices.length; i += 3) {
-        const a = innerIndices[i];
-        innerIndices[i] = innerIndices[i + 2];
-        innerIndices[i + 2] = a;
-    }
-    innerWallGeometry.computeVertexNormals();
-
-    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries([topGeometry, bottomGeometry, innerWallGeometry, outerWallGeometry]);
-    return mergedGeometry;
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    return geometry;
 }
 
 function createPlanets() {
@@ -206,21 +197,18 @@ function createPlanets() {
         scene.add(orbitRing);
 
         if (data.hasRing) {
-            const ringTexture = textureLoader.load('assets/2k_saturn_ring_alpha.png');
-            const ringGeometry = createRingGeometry(data.size * 1.2, data.size * 2, 0.1, 64);
-            const ringMaterial = new THREE.MeshStandardMaterial({
-                map: ringTexture,
-                side: THREE.DoubleSide,
+            const particleCount = 10000;
+            const ringGeometry = createParticleRing(particleCount, data.size * 1.2, data.size * 2, 0.1);
+            const ringMaterial = new THREE.PointsMaterial({
+                size: 0.1,
+                map: createParticleTexture(),
                 transparent: true,
                 opacity: data.ringOpacity,
                 color: data.ringColor,
-                metalness: 0.1,
-                roughness: 0.8
+                blending: THREE.AdditiveBlending
             });
-            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            const ring = new THREE.Points(ringGeometry, ringMaterial);
             ring.rotation.x = Math.PI / 2;
-            ring.castShadow = true;
-            ring.receiveShadow = true;
             planet.add(ring);
             ring.userData.isRing = true;
         }
