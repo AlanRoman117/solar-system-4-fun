@@ -432,13 +432,23 @@ function animate(time) {
         if (body.userData.orbit) {
             body.userData.orbit.rotation.y += body.userData.speed * 0.01;
         }
-        body.rotation.y += 0.005;
+        // Retrograde rotation for Venus, prograde for others
+        if (body.userData.name === 'Venus') {
+            body.rotation.y -= 0.005;
+        } else {
+            body.rotation.y += 0.005;
+        }
 
-        // Animate clouds and rings
+        // Animate clouds, atmospheres, and rings
         if (body.children.length > 0) {
             body.children.forEach(child => {
                 if (child.userData.isClouds) {
-                    child.rotation.y += 0.001;
+                    // Venus's atmosphere also has retrograde rotation
+                    if (body.userData.name === 'Venus') {
+                        child.rotation.y -= 0.001;
+                    } else {
+                        child.rotation.y += 0.001;
+                    }
                 }
                 if (child.userData.isRing) {
                     child.rotation.y += 0.002;
