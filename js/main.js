@@ -78,7 +78,7 @@ function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.5;
+    renderer.toneMappingExposure = 0.4;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -96,7 +96,7 @@ function init() {
     document.addEventListener('keydown', (e) => onKey(e, true));
     document.addEventListener('keyup', (e) => onKey(e, false));
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
     scene.add(ambientLight);
 
     const textureLoader = new THREE.TextureLoader();
@@ -128,7 +128,7 @@ function init() {
     scene.add(sun);
     celestialBodies.push(sun);
 
-    const pointLight = new THREE.PointLight(0xffffff, 1.5, 0, 2); // Use physically correct decay
+    const pointLight = new THREE.PointLight(0xffffff, 1.0, 0, 2); // Use physically correct decay
     pointLight.castShadow = true;
     pointLight.shadow.mapSize.width = 4096;
     pointLight.shadow.mapSize.height = 4096;
@@ -144,7 +144,7 @@ function init() {
     pointLight.add(lensflare);
 
     // Custom light for Pluto
-    const plutoLight = new THREE.DirectionalLight(0xffffff, 0.8); // Increased intensity slightly
+    const plutoLight = new THREE.DirectionalLight(0xffffff, 2.0); // Increased intensity slightly
     plutoLight.name = 'plutoLight'; // Assign a name to find it later
     plutoLight.layers.set(1); // Make this light only affect objects in layer 1
     scene.add(plutoLight);
