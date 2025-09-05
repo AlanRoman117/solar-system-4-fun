@@ -83,6 +83,7 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     cameraManager = new CameraManager(scene, renderer);
+    cameraManager.camera.layers.enableAll(); // Ensure camera sees all layers, including Pluto's special light layer
     
     const onKey = (event, isDown) => {
         switch (event.code) {
@@ -94,9 +95,9 @@ function init() {
     };
     document.addEventListener('keydown', (e) => onKey(e, true));
     document.addEventListener('keyup', (e) => onKey(e, false));
-    
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x222222, 1.0);
-    scene.add(hemisphereLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
 
     const textureLoader = new THREE.TextureLoader();
 
@@ -127,7 +128,7 @@ function init() {
     scene.add(sun);
     celestialBodies.push(sun);
 
-    const pointLight = new THREE.PointLight(0xffffff, 2, 0, 2); // Use physically correct decay
+    const pointLight = new THREE.PointLight(0xffffff, 1.5, 0, 2); // Use physically correct decay
     pointLight.castShadow = true;
     pointLight.shadow.mapSize.width = 4096;
     pointLight.shadow.mapSize.height = 4096;
@@ -141,6 +142,13 @@ function init() {
     lensflare.addElement(new LensflareElement(textureFlare3, 60, 0.6));
     lensflare.addElement(new LensflareElement(textureFlare3, 70, 0.7));
     pointLight.add(lensflare);
+
+    // Custom light for Pluto
+    const plutoLight = new THREE.DirectionalLight(0xffffff, 0.8); // Increased intensity slightly
+    plutoLight.name = 'plutoLight'; // Assign a name to find it later
+    plutoLight.layers.set(1); // Make this light only affect objects in layer 1
+    scene.add(plutoLight);
+
 
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, cameraManager.camera));
@@ -296,6 +304,10 @@ function createCelestialBody(data) {
     const wireframeGeom = new THREE.WireframeGeometry(geometry);
     const wireframeMat = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3 });
     body.add(new THREE.LineSegments(wireframeGeom, wireframeMat));
+
+    if (data.name === 'Pluto') {
+        body.layers.set(1); // Assign Pluto to a special layer for lighting
+    }
 
     body.castShadow = true;
     body.receiveShadow = true;
@@ -500,6 +512,23 @@ function animate(time) {
                 cameraManager.pointerLockControls.moveRight(-velocity.x * delta);
                 cameraManager.pointerLockControls.moveForward(-velocity.z * delta);
             }
+        }
+    }
+
+    // Update Pluto's custom light
+    const pluto = celestialBodies.find(body => body.userData.name === 'Pluto');
+    if (pluto) {
+        const plutoLight = scene.getObjectByName('plutoLight');
+        if (plutoLight) {
+            const plutoPosition = new THREE.Vector3();
+            pluto.getWorldPosition(plutoPosition);
+
+            const sunPosition = new THREE.Vector3();
+            sun.getWorldPosition(sunPosition);
+
+            // The light's position should be sun's position to simulate light coming from the sun
+            plutoLight.position.copy(sunPosition);
+            plutoLight.target = pluto;
         }
     }
 
