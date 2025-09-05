@@ -31,6 +31,19 @@ let moveRight = false;
 // Texture URLs from SolarSystemScope
 const textureBaseUrl = '';
 
+const planetFacts = {
+    sun: `<ul><li><strong>A Puzzling Past:</strong> Standard science suggests the Sun was 30% dimmer billions of years ago. This "Faint Young Sun Paradox" poses a problem: Earth should have been frozen, but geological records show liquid water was present. From a creationist view, this paradox disappears if the Sun and Earth are only thousands of years old.</li><li><strong>The Angular Momentum Problem:</strong> If the solar system formed from a spinning cloud, the Sun should have most of the rotational momentum. Instead, the planets have 98% of it. This observation challenges the standard nebular hypothesis.</li><li><strong>Created on Day Four:</strong> The biblical account in Genesis states that the Earth was created on Day One, while the Sun, the "greater light," was created on Day Four. This is interpreted as a theological statement to show that God, not the Sun, is the ultimate source of light and life.</li></ul>`,
+    mercury: `<ul><li><strong>Impossibly Dense:</strong> Mercury has a massive iron core that makes up about 85% of its radius. Standard formation models struggle to explain this, leading to theories of a giant impact stripping away its outer layers.</li><li><strong>A "Living" Magnetic Field:</strong> Scientists were surprised to find Mercury has a global magnetic field. According to old-universe models, its small core should have frozen solid eons ago, shutting off any magnetic dynamo.</li><li><strong>A Successful Prediction:</strong> In 1984, creationist physicist Dr. Russell Humphreys predicted that Mercury's magnetic field would be decaying rapidly. In 2011, the MESSENGER probe confirmed a significant drop in strength, matching the prediction based on a young-age model.</li></ul>`,
+    venus: `<ul><li><strong>The Backward Planet:</strong> Venus rotates backward (retrograde) compared to every other planet except Uranus. This directly challenges the nebular hypothesis, which predicts all planets should spin in the same direction.</li><li><strong>A "Young" Surface:</strong> Venus has a surprisingly low number of impact craters, suggesting the entire planet was catastrophically resurfaced by lava in the relatively recent past, which aligns better with a young-universe timeline.</li><li><strong>A Divine Contrast to Earth:</strong> Venus is a hellish world, seen as a deliberate design choice to highlight Earth's unique, fine-tuned habitability.</li></ul>`,
+    earth: `<ul><li><strong>The Receding Moon:</strong> The Moon is slowly moving away from Earth. Extrapolating this back, the Moon would have been touching the Earth just 1.5 billion years ago, a major problem for the 4.5-billion-year age model.</li><li><strong>A Decaying Shield:</strong> Earth's magnetic field has been measurably decaying, challenging theories of a multi-billion-year-old planet.</li><li><strong>Flood Geology:</strong> The global flood described in Genesis is considered the primary geological event that shaped our planet, depositing most sedimentary rock layers and fossils in a short, catastrophic period.</li></ul>`,
+    mars: `<ul><li><strong>Monuments to a Flood:</strong> The colossal volcanoes of the Tharsis region, including Olympus Mons, are interpreted as the engines of a past global flood on Mars, releasing immense quantities of water vapor.</li><li><strong>A Global Scar:</strong> Valles Marineris is viewed as evidence of a rapid, catastrophic event, not slow erosion over billions of years.</li><li><strong>Earth's Uniqueness:</strong> Mars's sterile, hostile environment highlights the unique and intentional design of Earth as the sole cradle of life in the solar system.</li></ul>`,
+    jupiter: `<ul><li><strong>The Planet That Shouldn't Exist:</strong> A forming Jupiter should have spiraled into the sun in less than a million years according to standard models. Its existence challenges these theories.</li><li><strong>Too Hot for Its Age:</strong> Jupiter radiates nearly twice as much heat as it receives from the Sun, consistent with a young planet still radiating the energy of its recent creation.</li><li><strong>Active Moons as "Clocks":</strong> Io's extreme volcanism and Ganymede's "impossible" magnetic field suggest these moons are thousands, not billions, of years old.</li></ul>`,
+    saturn: `<ul><li><strong>Impossibly Young Rings:</strong> Saturn's rings are 99.8% pure water ice and are actively disintegrating. Their purity and transient nature are a stunning confirmation of a young solar system.</li><li><strong>A Magnetic Mystery:</strong> Saturn's magnetic field is almost perfectly aligned with its spin axis, contradicting standard dynamo theory which requires a tilt to be sustained for billions of years.</li><li><strong>Enceladus's Geysers:</strong> This small, icy moon erupts massive geysers from a subsurface ocean. This intense, ongoing activity is impossible to sustain for billions of years.</li></ul>`,
+    uranus: `<ul><li><strong>The Sideways Planet:</strong> Uranus is tilted on its side by 98 degrees. The proposed "giant impact" solution is contradicted by its circular orbit and orderly moons.</li><li><strong>A Confirmed Creationist Prediction:</strong> In 1984, creationist physicist Dr. Russell Humphreys successfully predicted the strength of Uranus's magnetic field before the Voyager 2 probe's measurement in 1986.</li><li><strong>The Cold Twin:</strong> Unlike its "twin" Neptune, Uranus radiates very little internal heat, challenging the idea that they formed through the same uniform process.</li></ul>`,
+    neptune: `<ul><li><strong>The Planet That Shouldn't Exist:</strong> At its distance, there wasn't enough material for a planet of Neptune's mass to form in 4.5 billion years according to standard models.</li><li><strong>A Powerful Internal Engine:</strong> Neptune radiates 2.6 times more energy than it receives from the sun, direct evidence that the planet is young and still hot.</li><li><strong>Fragile Ring Arcs:</strong> Neptune's clumpy ring arcs should spread out and disappear in a very short time. Their existence points to a young system.</li></ul>`,
+    pluto: `<ul><li><strong>A Failed Prediction:</strong> Old-age models predicted Pluto would be a dead, cratered world. New Horizons revealed it to be stunningly active, a failure for the old-age paradigm.</li><li><strong>A Youthful Surface:</strong> The vast, crater-free glacier on Pluto (Sputnik Planitia) is powerful evidence that the entire world is young.</li><li><strong>Chaotic Moons:</strong> Pluto's smaller moons tumble erratically. This indicates the system is not gravitationally settled and therefore cannot be billions of years old.</li></ul>`
+};
+
 const planetData = [
     { name: 'Mercury', texture: 'assets/2k_mercury.jpg', size: 0.38, distance: 58, speed: 0.04, moons: [] },
     { name: 'Venus', texture: 'assets/2k_venus_surface.jpg', size: 0.95, distance: 108, speed: 0.035, moons: [] },
@@ -360,11 +373,23 @@ function createComets() {
 
 function setupUI() {
     const planetList = document.getElementById('planet-list');
+    const learnMoreButton = document.getElementById('learn-more-button');
+    const planetInfoPanel = document.getElementById('planet-info-panel');
+    const planetInfoTitle = document.getElementById('planet-info-title');
+    const planetInfoContent = document.getElementById('planet-info-content');
+    const planetInfoClose = document.getElementById('planet-info-close');
+
     celestialBodies.filter(b => b.userData.name === 'Sun').forEach(body => addBodyToList(body, planetList));
     celestialBodies.filter(b => b.userData.name !== 'Sun' && b.userData.isPlanet).forEach(body => addBodyToList(body, planetList));
 
     document.getElementById('toggle-nav').addEventListener('click', () => {
         cameraManager.switchToFreeRoam();
+        learnMoreButton.style.display = 'none';
+        planetInfoPanel.style.display = 'none';
+    });
+
+    planetInfoClose.addEventListener('click', () => {
+        planetInfoPanel.style.display = 'none';
     });
 }
 
@@ -373,6 +398,20 @@ function addBodyToList(body, listElement) {
     li.textContent = body.userData.name;
     li.onclick = () => {
         cameraManager.setFocus(body);
+        const planetName = body.userData.name;
+        const learnMoreButton = document.getElementById('learn-more-button');
+        learnMoreButton.textContent = `Learn more about ${planetName}`;
+        learnMoreButton.style.display = 'block';
+
+        learnMoreButton.onclick = () => {
+            const planetInfoPanel = document.getElementById('planet-info-panel');
+            const planetInfoTitle = document.getElementById('planet-info-title');
+            const planetInfoContent = document.getElementById('planet-info-content');
+
+            planetInfoTitle.textContent = planetName;
+            planetInfoContent.innerHTML = planetFacts[planetName.toLowerCase()];
+            planetInfoPanel.style.display = 'block';
+        };
     };
     listElement.appendChild(li);
 }

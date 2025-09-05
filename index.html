@@ -10,11 +10,19 @@
 </head>
 <body>
 
-    <div id="info-panel">
+    <div id="info-panel" class="info-panel">
         <h2>Solar System</h2>
         <button id="toggle-nav" class="toggle-button">Toggle Free Roam</button>
         <ul id="planet-list"></ul>
     </div>
+
+    <div id="planet-info-panel" class="info-panel" style="display: none;">
+        <h2 id="planet-info-title"></h2>
+        <div id="planet-info-content"></div>
+        <button id="planet-info-close" class="toggle-button">Close</button>
+    </div>
+
+    <button id="learn-more-button" class="toggle-button" style="display: none; position: absolute; bottom: 80px; right: 10px;"></button>
 
     <div id="controls-info">
         <b>Free Roam Controls:</b><br>
