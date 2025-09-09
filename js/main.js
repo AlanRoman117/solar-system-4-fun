@@ -49,7 +49,7 @@ const planetData = [
     { name: 'Venus', texture: 'assets/2k_venus_surface.jpg', size: 0.95, distance: 108, speed: 0.035, moons: [], lightIntensity: 0.9 },
     { name: 'Earth', texture: 'assets/2k_earth_daymap.jpg', size: 1, distance: 150, speed: 0.03, moons: [
         { name: 'Moon', texture: 'assets/2k_moon.jpg', size: 0.27, distance: 5, speed: 0.1 }
-    ], lightIntensity: 1.0 },
+    ], lightIntensity: 1.2 },
     { name: 'Mars', texture: 'assets/2k_mars.jpg', size: 0.53, distance: 228, speed: 0.024, moons: [
         { name: 'Phobos', texture: 'https://www.solarsystemscope.com/textures/download/phobos.jpg', size: 0.01, distance: 2, speed: 0.2 },
         { name: 'Deimos', texture: 'https://www.solarsystemscope.com/textures/download/deimos.jpg', size: 0.006, distance: 3, speed: 0.15 }
@@ -63,7 +63,7 @@ const planetData = [
     { name: 'Saturn', texture: 'assets/2k_saturn.jpg', size: 9.45, distance: 1427, speed: 0.009, moons: [], hasRing: true, ringColor: 0xffffff, ringOpacity: 0.8, lightIntensity: 1.2 },
     { name: 'Uranus', texture: 'assets/2k_uranus.jpg', size: 4, distance: 2871, speed: 0.006, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.4, lightIntensity: 1.5 },
     { name: 'Neptune', texture: 'assets/2k_neptune.jpg', size: 3.88, distance: 4497, speed: 0.005, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.3, lightIntensity: 2.0 },
-    { name: 'Pluto', texture: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Pluto%27s_surface_(Hubble).jpg', size: 0.18, distance: 5913, speed: 0.004, moons: [], lightIntensity: 4.0 }
+    { name: 'Pluto', texture: 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Nh-pluto-map.jpg', size: 0.18, distance: 5913, speed: 0.004, moons: [], lightIntensity: 4.0 }
 ];
 
 init();
