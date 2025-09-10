@@ -45,25 +45,25 @@ const planetFacts = {
 };
 
 const planetData = [
-    { name: 'Mercury', texture: 'assets/2k_mercury.jpg', size: 0.38, distance: 58, speed: 0.04, moons: [] },
-    { name: 'Venus', texture: 'assets/2k_venus_surface.jpg', size: 0.95, distance: 108, speed: 0.035, moons: [] },
+    { name: 'Mercury', texture: 'assets/2k_mercury.jpg', size: 0.38, distance: 58, speed: 0.04, moons: [], lightIntensity: 0.9 },
+    { name: 'Venus', texture: 'assets/2k_venus_surface.jpg', size: 0.95, distance: 108, speed: 0.035, moons: [], lightIntensity: 0.9 },
     { name: 'Earth', texture: 'assets/2k_earth_daymap.jpg', size: 1, distance: 150, speed: 0.03, moons: [
         { name: 'Moon', texture: 'assets/2k_moon.jpg', size: 0.27, distance: 5, speed: 0.1 }
-    ]},
+    ], lightIntensity: 1.2 },
     { name: 'Mars', texture: 'assets/2k_mars.jpg', size: 0.53, distance: 228, speed: 0.024, moons: [
         { name: 'Phobos', texture: 'https://www.solarsystemscope.com/textures/download/phobos.jpg', size: 0.01, distance: 2, speed: 0.2 },
         { name: 'Deimos', texture: 'https://www.solarsystemscope.com/textures/download/deimos.jpg', size: 0.006, distance: 3, speed: 0.15 }
-    ]},
+    ], lightIntensity: 0.9 },
     { name: 'Jupiter', texture: 'assets/2k_jupiter.jpg', size: 11.2, distance: 778, speed: 0.013, moons: [
         { name: 'Io', texture: 'https://www.solarsystemscope.com/textures/download/io.jpg', size: 0.3, distance: 15, speed: 0.1 },
         { name: 'Europa', texture: 'https://www.solarsystemscope.com/textures/download/europa.jpg', size: 0.25, distance: 20, speed: 0.08 },
         { name: 'Ganymede', texture: 'https://www.solarsystemscope.com/textures/download/ganymede.jpg', size: 0.4, distance: 25, speed: 0.06 },
         { name: 'Callisto', texture: 'https://www.solarsystemscope.com/textures/download/callisto.jpg', size: 0.38, distance: 30, speed: 0.05 }
-    ], hasRing: true, ringColor: 0xffa500, ringOpacity: 0.2},
-    { name: 'Saturn', texture: 'assets/2k_saturn.jpg', size: 9.45, distance: 1427, speed: 0.009, moons: [], hasRing: true, ringColor: 0xffffff, ringOpacity: 0.8 },
-    { name: 'Uranus', texture: 'assets/2k_uranus.jpg', size: 4, distance: 2871, speed: 0.006, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.4 },
-    { name: 'Neptune', texture: 'assets/2k_neptune.jpg', size: 3.88, distance: 4497, speed: 0.005, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.3 },
-    { name: 'Pluto', texture: 'https://www.solarsystemscope.com/textures/download/pluto.jpg', size: 0.18, distance: 5913, speed: 0.004, moons: [] }
+    ], hasRing: true, ringColor: 0xffa500, ringOpacity: 0.2, lightIntensity: 1.2 },
+    { name: 'Saturn', texture: 'assets/2k_saturn.jpg', size: 9.45, distance: 1427, speed: 0.009, moons: [], hasRing: true, ringColor: 0xffffff, ringOpacity: 0.8, lightIntensity: 1.2 },
+    { name: 'Uranus', texture: 'assets/2k_uranus.jpg', size: 4, distance: 2871, speed: 0.006, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.4, lightIntensity: 1.5 },
+    { name: 'Neptune', texture: 'assets/2k_neptune.jpg', size: 3.88, distance: 4497, speed: 0.005, moons: [], hasRing: true, ringColor: 0xadd8e6, ringOpacity: 0.3, lightIntensity: 2.0 },
+    { name: 'Pluto', texture: 'assets/2k_pluto.jpg', size: 0.18, distance: 5913, speed: 0.004, moons: [], lightIntensity: 1.5 }
 ];
 
 init();
@@ -78,11 +78,12 @@ function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.5;
+    renderer.toneMappingExposure = 0.4;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     cameraManager = new CameraManager(scene, renderer);
+    cameraManager.camera.layers.enableAll(); // Ensure camera sees all layers, including Pluto's special light layer
     
     const onKey = (event, isDown) => {
         switch (event.code) {
@@ -94,9 +95,9 @@ function init() {
     };
     document.addEventListener('keydown', (e) => onKey(e, true));
     document.addEventListener('keyup', (e) => onKey(e, false));
-    
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x222222, 1.0);
-    scene.add(hemisphereLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); // Very subtle ambient light
+    scene.add(ambientLight);
 
     const textureLoader = new THREE.TextureLoader();
 
@@ -120,32 +121,19 @@ function init() {
         map: sunTexture,
         emissiveMap: sunTexture,
         emissive: 0xffffee,
-        emissiveIntensity: 1.5
+        emissiveIntensity: 3.5
     });
     sun = new THREE.Mesh(sunGeometry, sunMaterial);
     sun.userData = { name: 'Sun', isPlanet: true, size: 20 };
     scene.add(sun);
     celestialBodies.push(sun);
 
-    const pointLight = new THREE.PointLight(0xffffff, 2, 0, 2); // Use physically correct decay
-    pointLight.castShadow = true;
-    pointLight.shadow.mapSize.width = 4096;
-    pointLight.shadow.mapSize.height = 4096;
-    pointLight.shadow.bias = -0.001;
-    sun.add(pointLight);
 
-    const textureFlare0 = textureLoader.load('https://cdn.rawgit.com/jeromeetienne/threex.planets/master/images/lensflare/lensflare0.png');
-    const textureFlare3 = textureLoader.load('https://cdn.rawgit.com/jeromeetienne/threex.planets/master/images/lensflare/lensflare3.png');
-    const lensflare = new Lensflare();
-    lensflare.addElement(new LensflareElement(textureFlare0, 700, 0, pointLight.color));
-    lensflare.addElement(new LensflareElement(textureFlare3, 60, 0.6));
-    lensflare.addElement(new LensflareElement(textureFlare3, 70, 0.7));
-    pointLight.add(lensflare);
 
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, cameraManager.camera));
 
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.5, 0.1);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.5, 0.8);
     composer.addPass(bloomPass);
 
     const smaaPass = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
@@ -199,6 +187,16 @@ function createPlanets() {
         scene.add(orbit);
         planet.position.x = data.distance;
         planet.userData = { ...data, isPlanet: true, orbit };
+
+        // Create a dedicated light for each planet
+        if (data.lightIntensity) {
+            const light = new THREE.DirectionalLight(0xffffff, data.lightIntensity);
+            light.visible = false; // Start with the light off
+            planet.userData.light = light; // Store light in userData
+            scene.add(light); // Add to scene so it can be controlled
+            scene.add(light.target); // Target also needs to be in the scene
+        }
+
         celestialBodies.push(planet);
 
         const orbitRingGeometry = new THREE.RingGeometry(data.distance - 0.2, data.distance + 0.2, 256);
@@ -246,12 +244,9 @@ function createCelestialBody(data) {
     if (data.name === 'Earth') {
         material = new THREE.MeshStandardMaterial({
             map: textureLoader.load(data.texture),
-            normalMap: textureLoader.load('assets/2k_earth_normal_map.tif'),
-            roughnessMap: textureLoader.load('assets/2k_earth_specular_map.tif'),
             emissiveMap: textureLoader.load('assets/2k_earth_nightmap.jpg'),
             emissive: 0xffffff,
-            emissiveIntensity: 1,
-            metalness: 0.1
+            emissiveIntensity: 1.0
         });
 
         const cloudsGeometry = new THREE.SphereGeometry(data.size * 1.01, 32, 32);
@@ -293,10 +288,6 @@ function createCelestialBody(data) {
         body = new THREE.Mesh(geometry, material);
     }
     
-    const wireframeGeom = new THREE.WireframeGeometry(geometry);
-    const wireframeMat = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3 });
-    body.add(new THREE.LineSegments(wireframeGeom, wireframeMat));
-
     body.castShadow = true;
     body.receiveShadow = true;
 
@@ -501,6 +492,32 @@ function animate(time) {
                 cameraManager.pointerLockControls.moveForward(-velocity.z * delta);
             }
         }
+    }
+
+    // --- Light Management ---
+    const sunPosition = new THREE.Vector3();
+    sun.getWorldPosition(sunPosition);
+
+    // Disable all planetary lights by default
+    celestialBodies.forEach(body => {
+        if (body.userData.light) {
+            body.userData.light.visible = false;
+            body.userData.light.castShadow = false;
+        }
+    });
+
+    // Enable and position the light for the currently focused planet
+    const focusedPlanet = cameraManager.focusedPlanet;
+    if (focusedPlanet && focusedPlanet.userData.light) {
+        const activeLight = focusedPlanet.userData.light;
+        activeLight.visible = true;
+        activeLight.position.copy(sunPosition);
+        activeLight.target = focusedPlanet;
+
+        // Configure and enable shadows for the active light
+        activeLight.castShadow = true;
+        activeLight.shadow.mapSize.width = 2048;
+        activeLight.shadow.mapSize.height = 2048;
     }
 
     cameraManager.update();
