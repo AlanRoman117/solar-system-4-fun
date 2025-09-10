@@ -244,12 +244,9 @@ function createCelestialBody(data) {
     if (data.name === 'Earth') {
         material = new THREE.MeshStandardMaterial({
             map: textureLoader.load(data.texture),
-            normalMap: textureLoader.load('assets/2k_earth_normal.jpg'),
-            roughnessMap: textureLoader.load('assets/2k_earth_specular.jpg'),
             emissiveMap: textureLoader.load('assets/2k_earth_nightmap.jpg'),
             emissive: 0xffffff,
-            emissiveIntensity: 1,
-            metalness: 0.1
+            emissiveIntensity: 1
         });
 
         const cloudsGeometry = new THREE.SphereGeometry(data.size * 1.01, 32, 32);
