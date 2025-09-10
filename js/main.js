@@ -246,32 +246,8 @@ function createCelestialBody(data) {
             map: textureLoader.load(data.texture),
             emissiveMap: textureLoader.load('assets/2k_earth_nightmap.jpg'),
             emissive: 0xffffff,
-            emissiveIntensity: 2.0 // Increased intensity for brighter night lights
+            emissiveIntensity: 1.0
         });
-
-        material.onBeforeCompile = function (shader) {
-            shader.fragmentShader = shader.fragmentShader.replace(
-                '#include <emissivemap_fragment>',
-                `
-                #ifdef USE_EMISSIVEMAP
-                    // Standard emissive map logic
-                    vec4 emissiveColor = texture2D( emissiveMap, vUv );
-                    emissiveColor.rgb = F_LinearTosRGB( emissiveColor.rgb );
-                    totalEmissiveRadiance *= emissiveColor.rgb;
-
-                    // Custom logic to show emissive map only on the dark side
-                    vec3 lightDirection = normalize(directionalLights[0].direction);
-                    float lightDot = dot(normalize(vNormal), lightDirection);
-
-                    // Create a smooth mask for the terminator
-                    float nightSideMask = 1.0 - smoothstep(-0.1, 0.25, lightDot);
-
-                    // Apply the mask to the final emissive radiance
-                    totalEmissiveRadiance *= nightSideMask;
-                #endif
-                `
-            );
-        };
 
         const cloudsGeometry = new THREE.SphereGeometry(data.size * 1.01, 32, 32);
         const cloudsMaterial = new THREE.MeshStandardMaterial({
@@ -312,10 +288,6 @@ function createCelestialBody(data) {
         body = new THREE.Mesh(geometry, material);
     }
     
-    const wireframeGeom = new THREE.WireframeGeometry(geometry);
-    const wireframeMat = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3 });
-    body.add(new THREE.LineSegments(wireframeGeom, wireframeMat));
-
     body.castShadow = true;
     body.receiveShadow = true;
 
