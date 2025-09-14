@@ -1,0 +1,61 @@
+/*
+  This stylesheet contains overrides for mobile devices and small screens.
+  It is loaded via a media query in index.html.
+*/
+
+/* General adjustments for smaller screens */
+body {
+    font-size: 16px; /* Increase base font size for readability */
+}
+
+/* Make panels take up the full width and stack them */
+.info-panel {
+    max-width: none; /* Remove max-width */
+    width: 95%; /* Use percentage-based width */
+    left: 2.5%;
+    right: 2.5%;
+    border-radius: 0; /* Optional: remove radius for a full-width feel */
+    box-sizing: border-box; /* Include padding in the width calculation */
+}
+
+/* Position the main info panel at the top */
+#info-panel {
+    top: 10px;
+    left: 2.5%; /* Center it with 2.5% margin on each side */
+}
+
+/* Position the planet-specific info panel below the main one, or handle differently */
+#planet-info-panel {
+    top: auto;
+    bottom: 10px; /* Place it at the bottom */
+    left: 2.5%;
+    max-height: 40%; /* Prevent it from taking up the whole screen */
+    overflow-y: auto; /* Allow scrolling if content is too long */
+}
+
+/* Hide the desktop-specific controls info */
+#controls-info {
+    display: none;
+}
+
+/* Adjust button sizes for easier tapping */
+.toggle-button {
+    padding: 12px 18px;
+    font-size: 18px;
+}
+
+/* Ensure the planet list is scrollable if it gets too long */
+#planet-list {
+    max-height: 20vh; /* Limit height to 20% of the viewport height */
+    overflow-y: auto; /* Add a scrollbar if needed */
+}
+
+/* Make the 'Learn More' button more prominent and accessible */
+#learn-more-button {
+    width: calc(100% - 20px); /* Full width minus some padding */
+    right: 10px;
+    bottom: 10px; /* Adjust position to be above any bottom panels */
+    padding: 15px;
+    font-size: 18px;
+    box-sizing: border-box;
+}

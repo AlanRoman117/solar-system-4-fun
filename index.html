@@ -6,6 +6,7 @@
     <title>Solar System Navigator</title>
     <!-- Link to the external CSS file -->
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mobile.css" media="screen and (max-width: 768px)">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -31,9 +32,13 @@
         <b>Click:</b> Lock/Unlock Mouse
     </div>
 
+    <!-- This div is the container for the virtual joystick -->
+    <div id="joystick-container" style="position: absolute; bottom: 50px; left: 50px; width: 150px; height: 150px; display: none;"></div>
+
     <!-- Link to the Three.js and Tween.js libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
     
     <!-- Link to the external JavaScript file -->
     <!-- The `type="module"` attribute is crucial for using ES6 import/export syntax -->

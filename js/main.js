@@ -27,6 +27,7 @@ let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
+let joystick = null;
 
 // Texture URLs from SolarSystemScope
 const textureBaseUrl = '';
@@ -85,16 +86,11 @@ function init() {
     cameraManager = new CameraManager(scene, renderer);
     cameraManager.camera.layers.enableAll(); // Ensure camera sees all layers, including Pluto's special light layer
     
-    const onKey = (event, isDown) => {
-        switch (event.code) {
-            case 'KeyW': moveForward = isDown; break;
-            case 'KeyA': moveLeft = isDown; break;
-            case 'KeyS': moveBackward = isDown; break;
-            case 'KeyD': moveRight = isDown; break;
-        }
-    };
-    document.addEventListener('keydown', (e) => onKey(e, true));
-    document.addEventListener('keyup', (e) => onKey(e, false));
+    if (isTouchDevice()) {
+        setupJoystick();
+    } else {
+        setupKeyboardControls();
+    }
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.05); // Very subtle ambient light
     scene.add(ambientLight);
@@ -133,17 +129,83 @@ function init() {
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, cameraManager.camera));
 
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.5, 0.8);
-    composer.addPass(bloomPass);
+    if (!isTouchDevice()) {
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.5, 0.8);
+        composer.addPass(bloomPass);
 
-    const smaaPass = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
-    composer.addPass(smaaPass);
+        const smaaPass = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+        composer.addPass(smaaPass);
+    }
 
     createPlanets();
     createAsteroidBelt();
     createComets();
     setupUI();
     window.addEventListener('resize', onWindowResize, false);
+}
+
+function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0) ||
+           (navigator.msMaxTouchPoints > 0));
+}
+
+function setupJoystick() {
+    const joystickContainer = document.getElementById('joystick-container');
+    joystickContainer.style.display = 'block';
+
+    const options = {
+        zone: joystickContainer,
+        mode: 'static',
+        position: { left: '50%', top: '50%' },
+        color: 'white',
+        size: 150
+    };
+
+    joystick = nipplejs.create(options);
+
+    joystick.on('move', function (evt, data) {
+        const angle = data.angle.radian;
+        const force = data.force;
+
+        // Reset movement flags
+        moveForward = moveBackward = moveLeft = moveRight = false;
+
+        // Check for forward/backward movement
+        if (force > 0.1) { // Threshold to avoid accidental movement
+            if (angle > Math.PI * 0.25 && angle < Math.PI * 0.75) {
+                moveForward = true;
+            } else if (angle > Math.PI * 1.25 && angle < Math.PI * 1.75) {
+                moveBackward = true;
+            }
+        }
+
+        // Check for left/right movement
+        if (force > 0.1) {
+            if (angle > Math.PI * 0.75 && angle < Math.PI * 1.25) {
+                moveLeft = true;
+            } else if (angle < Math.PI * 0.25 || angle > Math.PI * 1.75) {
+                moveRight = true;
+            }
+        }
+    });
+
+    joystick.on('end', function () {
+        moveForward = moveBackward = moveLeft = moveRight = false;
+    });
+}
+
+function setupKeyboardControls() {
+    const onKey = (event, isDown) => {
+        switch (event.code) {
+            case 'KeyW': moveForward = isDown; break;
+            case 'KeyA': moveLeft = isDown; break;
+            case 'KeyS': moveBackward = isDown; break;
+            case 'KeyD': moveRight = isDown; break;
+        }
+    };
+    document.addEventListener('keydown', (e) => onKey(e, true));
+    document.addEventListener('keyup', (e) => onKey(e, false));
 }
 
 function createParticleTexture() {
@@ -481,7 +543,7 @@ function animate(time) {
     });
 
     if (cameraManager.isFreeRoam) {
-        if (cameraManager.pointerLockControls.isLocked) {
+        if (cameraManager.pointerLockControls.isLocked || isTouchDevice()) {
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
             direction.z = Number(moveForward) - Number(moveBackward);

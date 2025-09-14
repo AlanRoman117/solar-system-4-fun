@@ -5,6 +5,12 @@ import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.128.0/examp
 // TWEEN is loaded globally from index.html
 const TWEEN = window.TWEEN;
 
+function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0) ||
+           (navigator.msMaxTouchPoints > 0));
+}
+
 class CameraManager {
     constructor(scene, renderer) {
         this.scene = scene;
@@ -24,16 +30,55 @@ class CameraManager {
         this.focusedPlanet = null;
         this.isFreeRoam = true;
 
+        // Touch controls state
+        this.isDragging = false;
+        this.previousTouch = { x: 0, y: 0 };
+        this.touchSensitivity = 0.005;
+
         this.initEventListeners();
         this.enableFreeRoamControls(); // Start in free roam
     }
 
     initEventListeners() {
-        this.domElement.addEventListener('click', () => {
-            if (this.isFreeRoam && !this.pointerLockControls.isLocked) {
-                this.pointerLockControls.lock();
-            }
-        });
+        if (isTouchDevice()) {
+            this.domElement.addEventListener('touchstart', this.handleTouchStart.bind(this), false);
+            this.domElement.addEventListener('touchmove', this.handleTouchMove.bind(this), false);
+            this.domElement.addEventListener('touchend', this.handleTouchEnd.bind(this), false);
+        } else {
+            this.domElement.addEventListener('click', () => {
+                if (this.isFreeRoam && !this.pointerLockControls.isLocked) {
+                    this.pointerLockControls.lock();
+                }
+            });
+        }
+    }
+
+    handleTouchStart(event) {
+        if (!this.isFreeRoam || event.touches.length !== 1) return;
+        this.isDragging = true;
+        this.previousTouch.x = event.touches[0].clientX;
+        this.previousTouch.y = event.touches[0].clientY;
+    }
+
+    handleTouchMove(event) {
+        if (!this.isFreeRoam || !this.isDragging || event.touches.length !== 1) return;
+
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - this.previousTouch.x;
+        const deltaY = touch.clientY - this.previousTouch.y;
+
+        this.pointerLockControls.getObject().rotation.y -= deltaX * this.touchSensitivity;
+        this.pointerLockControls.getObject().rotation.x -= deltaY * this.touchSensitivity;
+
+        // Clamp vertical rotation to avoid flipping
+        this.pointerLockControls.getObject().rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pointerLockControls.getObject().rotation.x));
+
+        this.previousTouch.x = touch.clientX;
+        this.previousTouch.y = touch.clientY;
+    }
+
+    handleTouchEnd(event) {
+        this.isDragging = false;
     }
 
     enableFreeRoamControls() {
@@ -41,10 +86,12 @@ class CameraManager {
         this.focusedPlanet = null;
         this.isTransitioning = false;
 
-        this.pointerLockControls.unlock();
-        this.orbitControls.enabled = false;
+        if (!isTouchDevice()) {
+            this.pointerLockControls.unlock();
+            document.getElementById('controls-info').style.display = 'block';
+        }
 
-        document.getElementById('controls-info').style.display = 'block';
+        this.orbitControls.enabled = false;
     }
 
     enableOrbitControls(planet) {
