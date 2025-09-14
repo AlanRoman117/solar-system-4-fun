@@ -431,6 +431,7 @@ function setupUI() {
     const planetInfoTitle = document.getElementById('planet-info-title');
     const planetInfoContent = document.getElementById('planet-info-content');
     const planetInfoClose = document.getElementById('planet-info-close');
+    const hamburgerMenu = document.getElementById('hamburger-menu');
 
     celestialBodies.filter(b => b.userData.name === 'Sun').forEach(body => addBodyToList(body, planetList));
     celestialBodies.filter(b => b.userData.name !== 'Sun' && b.userData.isPlanet).forEach(body => addBodyToList(body, planetList));
@@ -444,6 +445,14 @@ function setupUI() {
     planetInfoClose.addEventListener('click', () => {
         planetInfoPanel.style.display = 'none';
     });
+
+    // On mobile, the hamburger menu is visible and the list is hidden by default via CSS.
+    // This script adds the toggle functionality.
+    if (hamburgerMenu) {
+        hamburgerMenu.addEventListener('click', () => {
+            planetList.classList.toggle('show-list');
+        });
+    }
 }
 
 function addBodyToList(body, listElement) {
@@ -470,9 +479,13 @@ function addBodyToList(body, listElement) {
             const planetInfoTitle = document.getElementById('planet-info-title');
             const planetInfoContent = document.getElementById('planet-info-content');
 
-            planetInfoTitle.textContent = planetName;
-            planetInfoContent.innerHTML = planetFacts[planetName.toLowerCase()];
-            planetInfoPanel.style.display = 'block';
+            if (planetInfoPanel.style.display === 'block' && planetInfoTitle.textContent === planetName) {
+                planetInfoPanel.style.display = 'none';
+            } else {
+                planetInfoTitle.textContent = planetName;
+                planetInfoContent.innerHTML = planetFacts[planetName.toLowerCase()];
+                planetInfoPanel.style.display = 'block';
+            }
         };
     };
     listElement.appendChild(li);

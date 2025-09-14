@@ -59,3 +59,39 @@ body {
     font-size: 18px;
     box-sizing: border-box;
 }
+
+/* Styles for the hamburger menu */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hamburger-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.hamburger-button span {
+    width: 100%;
+    height: 3px;
+    background-color: white;
+    border-radius: 2px;
+}
+
+#planet-list {
+    display: none; /* Hide the list by default on mobile */
+    max-height: 50vh; /* Adjust height for mobile */
+}
+
+#planet-list.show-list {
+    display: block; /* Show the list when this class is added */
+}

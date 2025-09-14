@@ -16,6 +16,7 @@ canvas {
     padding: 15px;
     border-radius: 10px;
     max-width: 300px;
+    z-index: 10;
 }
 
 #info-panel {
@@ -77,4 +78,8 @@ canvas {
     margin: 4px 2px;
     cursor: pointer;
     border-radius: 8px;
+}
+
+.hamburger-button {
+    display: none;
 }
