@@ -394,6 +394,15 @@ function addBodyToList(body, listElement) {
         learnMoreButton.textContent = `Learn more about ${planetName}`;
         learnMoreButton.style.display = 'block';
 
+        // If the info panel is already open, update it immediately.
+        const planetInfoPanel = document.getElementById('planet-info-panel');
+        if (planetInfoPanel.style.display === 'block') {
+            const planetInfoTitle = document.getElementById('planet-info-title');
+            const planetInfoContent = document.getElementById('planet-info-content');
+            planetInfoTitle.textContent = planetName;
+            planetInfoContent.innerHTML = planetFacts[planetName.toLowerCase()];
+        }
+
         learnMoreButton.onclick = () => {
             const planetInfoPanel = document.getElementById('planet-info-panel');
             const planetInfoTitle = document.getElementById('planet-info-title');
