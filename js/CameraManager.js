@@ -1,4 +1,3 @@
-import * as THREE from 'https://cdn.skypack.dev/three@0.128.0';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/PointerLockControls.js';
 
@@ -12,11 +11,12 @@ function isTouchDevice() {
 }
 
 class CameraManager {
-    constructor(scene, renderer) {
+    constructor(THREE, scene, renderer) {
+        this.THREE = THREE;
         this.scene = scene;
         this.renderer = renderer;
         this.domElement = renderer.domElement;
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
+        this.camera = new this.THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
         this.camera.position.z = 200;
 
         // Controls
@@ -101,7 +101,7 @@ class CameraManager {
         this.pointerLockControls.unlock();
         this.orbitControls.enabled = true;
 
-        const targetPosition = new THREE.Vector3();
+        const targetPosition = new this.THREE.Vector3();
         planet.getWorldPosition(targetPosition);
         this.orbitControls.target.copy(targetPosition);
 
@@ -128,7 +128,7 @@ class CameraManager {
     }
 
     transitionToPlanet(planet) {
-        const targetLookAt = new THREE.Vector3();
+        const targetLookAt = new this.THREE.Vector3();
         planet.getWorldPosition(targetLookAt);
 
         // 1. Turn to look at the planet
@@ -141,7 +141,7 @@ class CameraManager {
             .to({ t: 1 }, 1000)
             .easing(TWEEN.Easing.Cubic.InOut)
             .onUpdate(({ t }) => {
-                THREE.Quaternion.slerp(startQuaternion, endQuaternion, this.camera.quaternion, t);
+                this.THREE.Quaternion.slerp(startQuaternion, endQuaternion, this.camera.quaternion, t);
             })
             .onComplete(() => {
                 // 2. Move towards the planet
@@ -153,12 +153,12 @@ class CameraManager {
     moveCameraToPlanet(planet) {
         const startPosition = this.camera.position.clone();
 
-        const targetLookAt = new THREE.Vector3();
+        const targetLookAt = new this.THREE.Vector3();
         planet.getWorldPosition(targetLookAt);
 
         const distance = planet.userData.size * 2.5;
-        const direction = new THREE.Vector3().subVectors(this.camera.position, targetLookAt).normalize();
-        const endPosition = new THREE.Vector3().addVectors(targetLookAt, direction.multiplyScalar(distance));
+        const direction = new this.THREE.Vector3().subVectors(this.camera.position, targetLookAt).normalize();
+        const endPosition = new this.THREE.Vector3().addVectors(targetLookAt, direction.multiplyScalar(distance));
 
         const initialTargetLookAt = targetLookAt.clone();
 
@@ -170,12 +170,12 @@ class CameraManager {
                 this.camera.position.copy(startPosition).lerp(endPosition, t);
 
                 // Keep looking at the (potentially moving) planet
-                const currentTargetLookAt = new THREE.Vector3();
+                const currentTargetLookAt = new this.THREE.Vector3();
                 planet.getWorldPosition(currentTargetLookAt);
 
                 // Adjust end position based on planet's movement
-                const delta = new THREE.Vector3().subVectors(currentTargetLookAt, initialTargetLookAt);
-                const adjustedEndPosition = new THREE.Vector3().addVectors(endPosition, delta);
+                const delta = new this.THREE.Vector3().subVectors(currentTargetLookAt, initialTargetLookAt);
+                const adjustedEndPosition = new this.THREE.Vector3().addVectors(endPosition, delta);
                 this.camera.position.copy(startPosition).lerp(adjustedEndPosition, t);
 
                 this.camera.lookAt(currentTargetLookAt);
@@ -198,12 +198,12 @@ class CameraManager {
         if (this.isFreeRoam) {
             // Free roam movement logic will be updated in main.js
         } else if (this.focusedPlanet && !this.isTransitioning) {
-            const targetPosition = new THREE.Vector3();
+            const targetPosition = new this.THREE.Vector3();
             this.focusedPlanet.getWorldPosition(targetPosition);
 
             // Before OrbitControls updates the camera based on user input,
             // we calculate the camera's current offset from the target.
-            const offset = new THREE.Vector3().subVectors(this.camera.position, this.orbitControls.target);
+            const offset = new this.THREE.Vector3().subVectors(this.camera.position, this.orbitControls.target);
 
             // Then, we update the target to the planet's new position.
             this.orbitControls.target.copy(targetPosition);

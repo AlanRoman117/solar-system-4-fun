@@ -1,4 +1,5 @@
 // Import necessary components from Three.js
+import * as THREE from 'https://cdn.skypack.dev/three@0.128.0';
 import { Lensflare, LensflareElement } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/objects/Lensflare.js';
 import { CameraManager } from './CameraManager.js';
 import { EffectComposer } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js';
@@ -67,8 +68,10 @@ const planetData = [
     { name: 'Pluto', texture: 'assets/2k_pluto.jpg', size: 0.18, distance: 5913, speed: 0.004, moons: [], lightIntensity: 1.5 }
 ];
 
-init();
-animate();
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    animate();
+});
 
 function init() {
     scene = new THREE.Scene();
@@ -83,7 +86,7 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    cameraManager = new CameraManager(scene, renderer);
+    cameraManager = new CameraManager(THREE, scene, renderer);
     cameraManager.camera.layers.enableAll(); // Ensure camera sees all layers, including Pluto's special light layer
     
     if (isTouchDevice()) {
@@ -440,6 +443,10 @@ function setupUI() {
         cameraManager.switchToFreeRoam();
         learnMoreButton.style.display = 'none';
         planetInfoPanel.style.display = 'none';
+
+        if (isTouchDevice()) {
+            document.getElementById('joystick-container').style.display = 'block';
+        }
     });
 
     planetInfoClose.addEventListener('click', () => {
@@ -460,6 +467,11 @@ function addBodyToList(body, listElement) {
     li.textContent = body.userData.name;
     li.onclick = () => {
         cameraManager.setFocus(body);
+
+        if (isTouchDevice()) {
+            document.getElementById('joystick-container').style.display = 'none';
+        }
+
         const planetName = body.userData.name;
         const learnMoreButton = document.getElementById('learn-more-button');
         learnMoreButton.textContent = `Learn more about ${planetName}`;
